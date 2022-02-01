@@ -1,0 +1,12 @@
+#! /bin/sh
+
+num=100
+mark=1
+name=tproxy
+
+ip rule show | grep $name
+if [ $? == 1 ]; then
+  ip rule add fwmark $mark table $num
+  ip route add local 0.0.0.0/0 dev lo table $num
+  echo "$num       $name" >> /etc/iproute2/rt_tables
+fi

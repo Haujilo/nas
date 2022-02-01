@@ -1,0 +1,140 @@
+version: "2.4"
+services:
+  openwrt:
+    extends:
+      file: ./yaml/proxy.yml
+      service: openwrt
+  dnss:
+    extends:
+      file: ./yaml/proxy.yml
+      service: dnss
+    network_mode: "service:openwrt"
+    depends_on:
+      - openwrt
+  clash:
+    extends:
+      file: ./yaml/proxy.yml
+      service: clash
+    network_mode: "service:openwrt"
+    depends_on:
+      - openwrt
+  dnsmasq:
+    extends:
+      file: ./yaml/proxy.yml
+      service: dnsmasq
+    network_mode: "service:openwrt"
+    depends_on:
+      - openwrt
+      - dnss
+      - clash
+  openldap:
+    extends:
+      file: ./yaml/app.yml
+      service: app
+    image: "${DOCKER_HUB_USER:?err}/openldap"
+    build:
+      context: ./image/openldap
+      args:
+        - BASE_IMAGE=${BASE_IMAGE:?err}
+    container_name: openldap
+    hostname: openldap
+    user: root
+  strongswan:
+    extends:
+      file: ./yaml/app.yml
+      service: app
+    image: "${DOCKER_HUB_USER:?err}/strongswan"
+    build:
+      context: ./image/strongswan
+    container_name: strongswan
+    hostname: strongswan
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - "/dev/ppp:/dev/ppp"
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.accept_redirects=0
+      - net.ipv4.conf.all.send_redirects=0
+      - net.ipv4.conf.all.rp_filter=0
+    user: root
+  samba:
+    extends:
+      file: ./yaml/app.yml
+      service: app
+    container_name: samba
+    hostname: samba
+    image: "${DOCKER_HUB_USER:?err}/samba"
+    build:
+      context: ./image/samba
+    tty: true
+    user: root
+  qbittorrent:
+    extends:
+      file: ./yaml/proxy.yml
+      service: app
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent
+    hostname: qbittorrent
+    user: root
+  haproxy:
+    extends:
+      file: ./yaml/app.yml
+      service: app
+    image: haproxy:alpine
+    container_name: haproxy
+    hostname: haproxy
+  jellyfin:
+    extends:
+      file: ./yaml/proxy.yml
+      service: app
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    hostname: jellyfin
+  calibre-web:
+    extends:
+      file: ./yaml/proxy.yml
+      service: app
+    image: linuxserver/calibre-web
+    container_name: calibre-web
+    hostname: calibre-web
+    user: root
+    environment:
+      - UMASK=007
+      - DOCKER_MODS=linuxserver/calibre-web:calibre #optional
+      - OAUTHLIB_RELAX_TOKEN_SCOPE=1 #optional
+  node_exporter:
+    extends:
+      file: ./yaml/base.yml
+      service: app
+    image: prom/node-exporter:latest
+    labels:
+      category: "monitor"
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host --collector.systemd --collector.processes'
+    network_mode: host
+    pid: host
+    cap_add:
+      - SYS_TIME
+    volumes:
+      - '/:/host:ro,rslave'
+  prometheus:
+    extends:
+      file: ./yaml/app.yml
+      service: app
+    image: prom/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus
+    labels:
+      category: "monitor"
+    user: root
+  grafana:
+    extends:
+      file: ./yaml/app.yml
+      service: app
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    hostname: grafana
+    labels:
+      category: "monitor"

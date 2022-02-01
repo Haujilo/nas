@@ -1,0 +1,6 @@
+version: "2.4"
+services:
+  base:
+    image: "${BASE_IMAGE:?err}"
+    build:
+      context: ./image/debain

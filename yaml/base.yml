@@ -1,0 +1,13 @@
+services:
+  app:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "2"
+    labels:
+      system: "nas"
+    environment:
+      - TZ=Asia/Shanghai
+    user: "${UID:?err}:${GID:?err}"
+    restart: "unless-stopped"

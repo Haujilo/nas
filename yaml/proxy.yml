@@ -1,0 +1,45 @@
+services:
+  app:
+    extends:
+      file: app.yml
+      service: app
+    dns: ${IP_PREFIX:?err}.1
+  openwrt:
+    extends:
+      file: gfw.yml
+      service: app
+    image: "${DOCKER_HUB_USER:?err}/openwrt"
+    build:
+      context: ../image/openwrt
+    hostname: openwrt
+    container_name: openwrt
+    tty: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    user: root
+  dnss:
+    extends:
+      file: gfw.yml
+      service: app
+    image: "${DOCKER_HUB_USER:?err}/dnss"
+    build:
+      context: ../image/dnss
+    container_name: dnss
+    environment:
+      - PORT=127.0.0.1:35353
+  clash:
+    extends:
+      file: gfw.yml
+      service: app
+    image: dreamacro/clash
+    container_name: clash
+    user: root
+  dnsmasq:
+    extends:
+      file: gfw.yml
+      service: app
+    image: "${DOCKER_HUB_USER:?err}/dnsmasq"
+    build:
+      context: ../image/dnsmasq
+    container_name: dnsmasq
